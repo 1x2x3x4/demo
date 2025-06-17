@@ -7,8 +7,8 @@ module.exports = {
   entry: './src/main.js',
   output: {
     filename: 'bundle.[contenthash].js',
-    path: path.resolve(__dirname, 'dist'),
-    clean: true,                 // 每次构建前清理 dist
+    path: path.resolve(__dirname, 'docs'),
+    clean: true,                 // 每次构建前清理 docs
   },
   devtool: 'source-map',
   devServer: {
