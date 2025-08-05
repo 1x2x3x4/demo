@@ -52,18 +52,20 @@ export class ElectronBeam {
   
   /**
    * 更新电子束路径
-   * @param {Object} deflection - 偏转参数
+   * @param {Object} deflectionParams - 偏转参数对象
+   * @param {Object} deflectionParams.vertical - 垂直偏转参数
+   * @param {number} deflectionParams.vertical.voltage - 垂直偏转电压
+   * @param {Object} deflectionParams.horizontal - 水平偏转参数
+   * @param {number} deflectionParams.horizontal.voltage - 水平偏转电压
    */
-  updateBeamPath(deflection) {
+  updateBeamPath(deflectionParams) {
     // 计算偏转量
-    const verticalDeflection = deflection.vertical.voltage * (CONFIG.deflection.vertical.maxDeflection / 5);
-    const horizontalDeflection = deflection.horizontal.voltage * (CONFIG.deflection.horizontal.maxDeflection / 5);
+    const voltageScalingFactor = CONFIG.electronBeam.voltageScalingFactor;
+    const verticalDeflection = deflectionParams.vertical.voltage * (CONFIG.deflection.vertical.maxDeflection / voltageScalingFactor);
+    const horizontalDeflection = deflectionParams.horizontal.voltage * (CONFIG.deflection.horizontal.maxDeflection / voltageScalingFactor);
     
-    // 更新路径点
-    this.beamPoints[0] = new THREE.Vector3(-2.7, 0, 0);  // 电子枪出口（固定）
-    this.beamPoints[1] = new THREE.Vector3(-1.5, verticalDeflection * 0.3, 0);  // 垂直偏转板出口（轻微偏转）
-    this.beamPoints[2] = new THREE.Vector3(-0.2, verticalDeflection, horizontalDeflection * 0.3);  // 水平偏转板出口
-    this.beamPoints[3] = new THREE.Vector3(3, verticalDeflection, horizontalDeflection);  // 荧光屏（完全偏转）
+    // 生成物理真实的电子束轨迹
+    this.beamPoints = this.generatePhysicalBeamPath(verticalDeflection, horizontalDeflection);
     
     // 更新几何体
     const beamGeometry = new THREE.BufferGeometry().setFromPoints(this.beamPoints);
@@ -75,7 +77,162 @@ export class ElectronBeam {
     this.beamMaterial.opacity = CONFIG.beam.intensity;
     
     // 记录轨迹点（只记录打在荧光屏上的点）
-    this.addTracePoint(this.beamPoints[3].clone());
+    const lastBeamPoint = this.beamPoints[this.beamPoints.length - 1];
+    this.addTracePoint(lastBeamPoint.clone());
+  }
+  
+  /**
+   * 生成物理真实的电子束轨迹
+   * @param {number} verticalDeflection - 垂直偏转量
+   * @param {number} horizontalDeflection - 水平偏转量
+   * @returns {Array<THREE.Vector3>} 轨迹点数组
+   */
+  generatePhysicalBeamPath(verticalDeflection, horizontalDeflection) {
+    const trajectoryPoints = [];
+    
+    // 获取极板位置信息
+    const platePositions = this.getPlatePositions();
+    const gunExitPoint = this.getGunExitPoint();
+    
+    // 添加电子枪出口点
+    trajectoryPoints.push(gunExitPoint);
+    
+    // 电子枪到垂直偏转板的直线段
+    const verticalPlateEntryPoint = new THREE.Vector3(platePositions.verticalPlateStartX, 0, 0);
+    const gunToVerticalPlatePoints = this.generateLinearTrajectory(
+      gunExitPoint,
+      verticalPlateEntryPoint,
+      CONFIG.electronBeam.linearSegments.gunToVerticalPlate
+    );
+    trajectoryPoints.push(...gunToVerticalPlatePoints);
+    
+    // 垂直偏转板内的抛物线轨迹
+    const verticalPlatePoints = this.generateParabolicTrajectory(
+      verticalPlateEntryPoint,
+      platePositions.verticalPlateEndX,
+      verticalDeflection,
+      'vertical'
+    );
+    trajectoryPoints.push(...verticalPlatePoints);
+    
+    // 垂直偏转板到水平偏转板的直线段
+    const horizontalPlateEntryPoint = new THREE.Vector3(platePositions.horizontalPlateStartX, verticalDeflection, 0);
+    const verticalPlateExitPoint = new THREE.Vector3(platePositions.verticalPlateEndX, verticalDeflection, 0);
+    const verticalToHorizontalPlatePoints = this.generateLinearTrajectory(
+      verticalPlateExitPoint,
+      horizontalPlateEntryPoint,
+      CONFIG.electronBeam.linearSegments.betweenPlates
+    );
+    trajectoryPoints.push(...verticalToHorizontalPlatePoints);
+    
+    // 水平偏转板内的抛物线轨迹
+    const horizontalPlatePoints = this.generateParabolicTrajectory(
+      horizontalPlateEntryPoint,
+      platePositions.horizontalPlateEndX,
+      horizontalDeflection,
+      'horizontal'
+    );
+    trajectoryPoints.push(...horizontalPlatePoints);
+    
+    // 水平偏转板出口到荧光屏的直线段
+    const plateExitPoint = new THREE.Vector3(platePositions.horizontalPlateEndX, verticalDeflection, horizontalDeflection);
+    const screenHitPoint = new THREE.Vector3(platePositions.screenX, verticalDeflection, horizontalDeflection);
+    const plateToScreenPoints = this.generateLinearTrajectory(
+      plateExitPoint,
+      screenHitPoint,
+      CONFIG.electronBeam.linearSegments.plateToScreen
+    );
+    trajectoryPoints.push(...plateToScreenPoints);
+    
+    return trajectoryPoints;
+  }
+  
+  /**
+   * 生成抛物线轨迹
+   * @param {THREE.Vector3} startPoint - 起始点
+   * @param {number} endX - 结束X坐标
+   * @param {number} maxDeflection - 最大偏转量
+   * @param {string} direction - 偏转方向 ('vertical' 或 'horizontal')
+   * @returns {Array<THREE.Vector3>} 抛物线轨迹点
+   */
+  generateParabolicTrajectory(startPoint, endX, maxDeflection, direction) {
+    const parabolicPoints = [];
+    const segmentCount = CONFIG.electronBeam.parabolicSegments || 10;
+    const plateLength = endX - startPoint.x;
+    
+    for (let i = 1; i <= segmentCount; i++) {
+      const progress = i / segmentCount;
+      const x = startPoint.x + plateLength * progress;
+      
+      // 物理真实的抛物线方程
+      // 在恒定电场中，电子轨迹为抛物线：y = (eE/2mv²) * x²
+      // 这里简化为：deflection = maxDeflection * (x/plateLength)²
+      const normalizedX = progress; // 0到1的归一化坐标
+      const parabolicDeflection = maxDeflection * normalizedX * normalizedX;
+      
+      let y, z;
+      if (direction === 'vertical') {
+        y = startPoint.y + parabolicDeflection;
+        z = startPoint.z;
+      } else {
+        y = startPoint.y;
+        z = startPoint.z + parabolicDeflection;
+      }
+      
+      parabolicPoints.push(new THREE.Vector3(x, y, z));
+    }
+    
+    return parabolicPoints;
+  }
+  
+  /**
+   * 生成直线轨迹
+   * @param {THREE.Vector3} startPoint - 起始点
+   * @param {THREE.Vector3} endPoint - 结束点
+   * @param {number} segmentCount - 段数
+   * @returns {Array<THREE.Vector3>} 直线轨迹点
+   */
+  generateLinearTrajectory(startPoint, endPoint, segmentCount = 5) {
+    const linearPoints = [];
+    
+    for (let i = 1; i <= segmentCount; i++) {
+      const progress = i / segmentCount;
+      const x = startPoint.x + (endPoint.x - startPoint.x) * progress;
+      const y = startPoint.y + (endPoint.y - startPoint.y) * progress;
+      const z = startPoint.z + (endPoint.z - startPoint.z) * progress;
+      
+      linearPoints.push(new THREE.Vector3(x, y, z));
+    }
+    
+    return linearPoints;
+  }
+  
+  /**
+   * 获取极板位置信息
+   * @returns {Object} 极板位置对象
+   */
+  getPlatePositions() {
+    const verticalPlateStartX = CONFIG.components.verticalPlates.positions[0].x;
+    const verticalPlateEndX = verticalPlateStartX + CONFIG.components.verticalPlates.depth;
+    const horizontalPlateStartX = CONFIG.components.horizontalPlates.positions[0].x;
+    const horizontalPlateEndX = horizontalPlateStartX + CONFIG.components.horizontalPlates.depth;
+    const screenX = CONFIG.components.screen.position.x;
+    
+    return {
+      verticalPlateStartX,
+      verticalPlateEndX,
+      horizontalPlateStartX,
+      horizontalPlateEndX,
+      screenX
+    };
+  }
+  
+  /**
+   * 获取电子枪出口点
+   * @returns {THREE.Vector3} 电子枪出口点
+   */
+  getGunExitPoint() {
+    return new THREE.Vector3(-2.7, 0, 0);
   }
   
   /**

@@ -19,7 +19,7 @@ let scene, camera, renderer, controls;  // 场景、相机、渲染器、控制�
 let electronBeam, waveformGenerator, screenController;  // 电子束、波形生成器、荧光屏控制器
 let guiController, uiController;  // GUI控制器、UI控制器
 let labelSystem, explodedView, demoAnimation;  // 标签系统、分解视图、演示动画
-let centerGlow;  // 屏幕中心光点
+let dynamicGlowPoint;  // 动态光点（跟随电子束击中位置）
 
 // ===== 场景对象引用 =====
 let gun, gunHead, v1, v2, h1, h2, screen;  // 电子枪、电子枪头、垂直偏转板、水平偏转板、荧光屏    
@@ -188,11 +188,12 @@ function initComponents() {
   screen.rotation.y = -Math.PI / 2; // 设置荧光屏旋转
   scene.add(screen); // 将荧光屏添加到场景中
    
-  // 添加屏幕中心的光点
-  const centerGlowGeometry = new THREE.SphereGeometry(CONFIG.components.centerGlow.radius, 16, 16);
-  centerGlow = new THREE.Mesh(centerGlowGeometry, glowPointMat);
-  centerGlow.position.set(CONFIG.components.centerGlow.position.x, CONFIG.components.centerGlow.position.y, CONFIG.components.centerGlow.position.z); // 位于屏幕中心前方一点
-  scene.add(centerGlow);
+  // 创建动态光点（跟随电子束击中位置）
+  const dynamicGlowGeometry = new THREE.SphereGeometry(CONFIG.components.dynamicGlow.radius, 16, 16);
+  dynamicGlowPoint = new THREE.Mesh(dynamicGlowGeometry, glowPointMat);
+  // 初始位置设为屏幕中心
+  dynamicGlowPoint.position.set(CONFIG.components.screen.position.x, CONFIG.components.screen.position.y, CONFIG.components.screen.position.z);
+  scene.add(dynamicGlowPoint);
   
   // 初始化电子束控制器
   electronBeam = new ElectronBeam(scene);
@@ -283,9 +284,9 @@ function initGui() {
     },
     onScreenChange: (screenParams) => {
       screenController.updateMaterial();
-      // 更新中心光点颜色
-      if (centerGlow) {
-        centerGlow.material.color.set(CONFIG.dotLight.color);
+      // 更新动态光点颜色
+      if (dynamicGlowPoint) {
+        dynamicGlowPoint.material.color.set(CONFIG.dotLight.color);
       }
     }
   });
@@ -323,27 +324,45 @@ function initUIController() {
 
 // ===== 更新电子束 =====
 function updateElectronBeam() {
+  let deflectionParams;
+  
   // 如果波形启用，计算波形产生的偏转电压
   if (CONFIG.waveform.enabled) {
     const deflectionVoltage = waveformGenerator.calculateDeflectionVoltage(
       CONFIG.waveform,
       CONFIG.deflection
     );
-    
-    // 更新电子束路径
-    electronBeam.updateBeamPath({
+    deflectionParams = {
       horizontal: { voltage: deflectionVoltage.horizontal },
       vertical: { voltage: deflectionVoltage.vertical }
-    });
-    
-    // 更新荧光屏上的点
-    screenController.addGlowPoint(electronBeam.beamPoints[3]);
+    };
   } else {
     // 直接使用控制面板上的电压值
-    electronBeam.updateBeamPath(CONFIG.deflection);
-    
-    // 更新荧光屏上的点
-    screenController.addGlowPoint(electronBeam.beamPoints[3]);
+    deflectionParams = CONFIG.deflection;
+  }
+  
+  // 更新电子束路径
+  electronBeam.updateBeamPath(deflectionParams);
+  
+  // 更新荧光屏和动态光点
+  updateScreenAndGlowPoint();
+}
+
+/**
+ * 更新荧光屏和动态光点
+ */
+function updateScreenAndGlowPoint() {
+  const lastBeamPoint = electronBeam.beamPoints[electronBeam.beamPoints.length - 1];
+  
+  // 更新荧光屏上的点
+  screenController.addGlowPoint(lastBeamPoint);
+  
+  // 更新动态光点位置到电子束击中位置
+  if (dynamicGlowPoint) {
+    dynamicGlowPoint.position.copy(lastBeamPoint);
+    // 确保光点在屏幕前面一点点，避免z-fighting
+    const zFightingOffset = CONFIG.electronBeam.zFightingOffset;
+    dynamicGlowPoint.position.x = CONFIG.components.screen.position.x - zFightingOffset;
   }
 }
 
@@ -382,12 +401,12 @@ function animate(timestamp) {
   // 更新荧光屏效果
   screenController.update();
   
-  // 更新中心光点的脉冲效果
-  if (centerGlow) {
+  // 更新动态光点的脉冲效果
+  if (dynamicGlowPoint) {
     // 创建脉冲效果 - 使用正弦波使光点大小和亮度呼吸
     const pulse = Math.sin(timestamp * 0.003) * 0.2 + 0.8;
-    centerGlow.scale.set(pulse, pulse, pulse);
-    centerGlow.material.opacity = pulse * 0.8;
+    dynamicGlowPoint.scale.set(pulse, pulse, pulse);
+    dynamicGlowPoint.material.opacity = pulse * 0.8;
   }
   
   // 更新分解视图

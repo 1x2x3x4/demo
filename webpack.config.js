@@ -15,7 +15,7 @@ module.exports = {
     static: './dist',           // Webpack-5 写法
     hot: true,                   // 模块热替换
     open: true,                  // 启动后自动打开浏览器
-    port: 8080,                  // 修改为8080端口
+    port: 8081,                  // 修改为8081端口
   },
   plugins: [
     new HtmlWebpackPlugin({

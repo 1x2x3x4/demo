@@ -121,9 +121,9 @@ export const CONFIG = {
       height: 3,               // 荧光屏高度
       position: { x: 3, y: 0, z: 0 }  // 位置
     },
-    centerGlow: {
-      radius: 0.08,            // 中心光点半径
-      position: { x: 2.95, y: 0, z: 0 }  // 位置
+    dynamicGlow: {
+      radius: 0.08,            // 动态光点半径
+      position: { x: 2.95, y: 0, z: 0 }  // 初始位置
     }
   },
   
@@ -138,7 +138,17 @@ export const CONFIG = {
     trace: {
       maxPoints: 100,             // 最大轨迹点数
       opacity: 0.3                // 轨迹透明度
-    }
+    },
+    parabolicSegments: 15,        // 抛物线轨迹段数
+    trajectorySmoothing: 0.8,     // 轨迹平滑度
+    linearSegments: {
+      gunToVerticalPlate: 3,      // 电子枪到垂直偏转板段数
+      betweenPlates: 3,           // 极板之间段数
+      plateToScreen: 5            // 极板到荧光屏段数
+    },
+    voltageScalingFactor: 5,      // 电压缩放因子
+    zFightingOffset: 0.05,        // Z-fighting偏移量
+    screenOffset: 0.01            // 屏幕偏移量
   },
   
   // 荧光屏效果配置

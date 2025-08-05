@@ -106,7 +106,8 @@ export class Screen {
     
     // 设置位置（稍微偏移，避免z-fighting）
     glowMesh.position.copy(position);
-    glowMesh.position.x = CONFIG.components.centerGlow.position.x; // 确保在荧光屏前面一点点
+    const screenOffset = CONFIG.electronBeam.screenOffset;
+    glowMesh.position.x = CONFIG.components.screen.position.x - screenOffset; // 确保在荧光屏前面一点点
     
     // 添加到场景
     this.scene.add(glowMesh);
