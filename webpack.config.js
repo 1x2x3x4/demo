@@ -4,22 +4,39 @@ const HtmlWebpackPlugin = require('html-webpack-plugin');
 
 module.exports = {
   mode: 'development',           // 或 'production'
-  entry: './src/main.js',
+  // 关闭持久化缓存，避免模板变更未及时反映到输出 HTML
+  cache: false,
+  entry: {
+    internal: './src/main.js',
+  },
   output: {
-    filename: 'bundle.[contenthash].js',
+    filename: '[name].bundle.[contenthash].js',
     path: path.resolve(__dirname, 'docs'),
     clean: true,                 // 每次构建前清理 docs
   },
   devtool: 'source-map',
   devServer: {
-    static: './dist',           // Webpack-5 写法
-    hot: true,                   // 模块热替换
-    open: true,                  // 启动后自动打开浏览器
-    port: 8081,                  // 修改为8081端口
+    // 同时提供 docs（构建产物）与项目根目录（CDN、scripts、TourGuide 等原生文件）
+    static: [
+      { directory: path.resolve(__dirname, 'docs') },
+      { directory: path.resolve(__dirname, '.') },
+    ],
+    hot: true,
+    open: ['external.html'],    // 默认打开外部页
+    port: 8081,
   },
   plugins: [
+    // 内部原理页（走 Webpack bundle）
     new HtmlWebpackPlugin({
-      template: './public/index.html',   // 把下方模板复制进来
+      template: './public/internal.html',
+      filename: 'internal.html',
+      chunks: ['internal'],
+    }),
+    // 外部操作页（纯静态模板，不注入 bundle）
+    new HtmlWebpackPlugin({
+      template: './public/external.html',
+      filename: 'external.html',
+      inject: false,
     }),
   ],
   module: {

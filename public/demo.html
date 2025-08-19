@@ -1,0 +1,198 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Line-Style Two Tiles (in-page switch)</title>
+<style>
+  :root{
+    --tile: 44px;                  /* 单格尺寸 */
+    --bg: #0f1115;
+    --panel: #15171b;
+    --line-1: rgba(255,255,255,.20);  /* 亮线 */
+    --line-2: rgba(255,255,255,.06);  /* 次级线 */
+    --icon: #c7bda3;               /* 图标米金 */
+    --muted:#9aa3b2;
+    --focus:#6aa2ff;
+  }
+  *{ box-sizing:border-box }
+  body{
+    margin:0; min-height:100dvh; display:grid; place-items:center;
+    background:
+      radial-gradient(900px 450px at 50% -200px, rgba(105,140,255,.12), transparent 60%),
+      var(--bg);
+    color:#e6e8eb; font:16px/1.4 ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,Arial;
+  }
+
+  /* ===== 顶部双格：硬边线条风 ===== */
+  .tile-group{
+    display:grid; grid-template-columns: var(--tile) var(--tile);
+    width: calc(var(--tile) * 2);
+    /* 外框双线：粗细两层，强调“线条感” */
+    background:
+      /* 顶部细亮线 */
+      linear-gradient(#ffffff20, #ffffff20) top/100% 1px no-repeat,
+      /* 底部细暗线 */
+      linear-gradient(#00000080, #00000080) bottom/100% 1px no-repeat,
+      /* 背景扫描线+竖向细网格 */
+      repeating-linear-gradient(0deg, #1a1c21 0 2px, #15171b 2px 4px),
+      repeating-linear-gradient(90deg, #14161a 0 6px, #121418 6px 12px);
+    border: 1px solid var(--line-2);           /* 外层线 */
+    box-shadow:
+      inset 0 0 0 1px #00000080,               /* 内压线 */
+      0 10px 24px rgba(0,0,0,.35);             /* 投影 */
+  }
+
+  .tile-btn{
+    all:unset; cursor:pointer;
+    width:var(--tile); height:var(--tile);
+    display:grid; place-items:center; position:relative;
+    /* 单格里的交错网格，增强“线条感” */
+    background:
+      repeating-linear-gradient(0deg, #1c1e23 0 2px, #15171b 2px 4px),
+      repeating-linear-gradient(90deg, #14161a 0 8px, #121418 8px 16px);
+    /* 单格双线描边（非圆角） */
+    box-shadow:
+      inset 0 0 0 1px var(--line-1),
+      inset 0 0 0 2px var(--line-2);
+    transition: filter .12s ease, transform .12s ease, box-shadow .12s ease;
+  }
+  .tile-btn.right{
+    /* 中间分割线：深浅两条，硬朗 */
+    box-shadow:
+      inset 1px 0 0 #00000090,
+      inset 2px 0 0 #ffffff10,
+      inset 0 0 0 1px var(--line-1),
+      inset 0 0 0 2px var(--line-2);
+  }
+  .tile-btn:active{ transform: translateY(1px) }
+  .tile-btn[aria-selected="false"]{ filter: brightness(.78) contrast(1.05) }
+  .tile-btn[aria-selected="true"]{
+    /* 选中态：线条更亮，边缘加一道强调线 */
+    box-shadow:
+      inset 0 0 0 1px #e7e9ec,
+      inset 0 0 0 2px var(--line-1),
+      0 0 0 1px #ffffff20;
+  }
+  .tile-btn:focus-visible{
+    outline: 2px solid color-mix(in oklab, var(--focus) 70%, transparent);
+    outline-offset: -2px;
+  }
+
+  /* 图标采用线框风格 */
+  .tile-btn svg{ width:22px; height:22px; display:block }
+  .stroke{ stroke: var(--icon); stroke-width:1.8; fill:none; stroke-linecap:round; stroke-linejoin:round }
+  .dot{ fill: var(--icon) }
+
+  /* ===== 面板区 ===== */
+  .panels{ margin-top:16px; width:min(860px, 92vw) }
+  .panel{
+    background:
+      linear-gradient(#ffffff08, transparent 40%),
+      repeating-linear-gradient(0deg, #181a1f 0 2px, #14161a 2px 4px);
+    border:1px solid var(--line-2);
+    box-shadow: inset 0 0 0 1px #00000066;
+    padding:16px 18px;
+  }
+  .panel + .panel{ margin-top:12px }
+  .panel h3{ margin:0 0 8px; font-weight:600 }
+  .panel p{ margin:0 0 8px; color:var(--muted) }
+  code{ background:#11141a; padding:.1em .35em; border:1px solid #00000066 }
+
+  .sr-only{ position:absolute; width:1px; height:1px; margin:-1px; overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border:0 }
+</style>
+</head>
+<body>
+
+  <!-- 两格按钮（无圆角，纯线条风） -->
+  <div class="tile-group" role="tablist" aria-label="模式切换">
+    <!-- 左：主页/外部 -->
+    <button class="tile-btn left"
+            id="tab-external"
+            role="tab"
+            aria-selected="true"
+            aria-controls="panel-external"
+            tabindex="0"
+            data-target="#panel-external"
+            title="外部">
+      <span class="sr-only">外部</span>
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <path class="stroke" d="M4 11.5 12 5l8 6.5V19a2 2 0 0 1-2 2h-5v-6a1 1 0 0 0-2 0v6H6a2 2 0 0 1-2-2v-7.5z"/>
+      </svg>
+    </button>
+
+    <!-- 右：内部原理/警示 -->
+    <button class="tile-btn right"
+            id="tab-internal"
+            role="tab"
+            aria-selected="false"
+            aria-controls="panel-internal"
+            tabindex="-1"
+            data-target="#panel-internal"
+            title="内部原理">
+      <span class="sr-only">内部原理</span>
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <path class="stroke" d="M4 11.5 12 5l8 6.5V19a2 2 0 0 1-2 2h-5v-6a1 1 0 0 0-2 0v6H6a2 2 0 0 1-2-2v-7.5z"/>
+        <path class="stroke" d="M12 9v4"/>
+        <circle class="dot" cx="12" cy="16" r="1.1"/>
+      </svg>
+    </button>
+  </div>
+
+  <!-- 面板内容（同页切换） -->
+  <div class="panels">
+    <section id="panel-external" class="panel" role="tabpanel" aria-labelledby="tab-external">
+      <h3>外部操作</h3>
+      <p>这是“外部”面板示例，把你的外部页面内容直接放到这里。</p>
+      <ul>
+        <li>任务面板 / 列表 / 控件</li>
+        <li>说明文本或按钮组</li>
+      </ul>
+    </section>
+
+    <section id="panel-internal" class="panel" role="tabpanel" aria-labelledby="tab-internal" hidden>
+      <h3>内部原理</h3>
+      <p>这是“内部原理”面板示例，可放图表、日志、渲染结果等。</p>
+      <pre><code>// TODO: 替换为你的内部逻辑展示</code></pre>
+    </section>
+  </div>
+
+<script>
+  // 简单 tabs：不跳转，只切换显示
+  const btns   = [...document.querySelectorAll('.tile-btn')];
+  const panels = [...document.querySelectorAll('.panel')];
+
+  function activate(targetSel){
+    btns.forEach(b => {
+      const on = b.dataset.target === targetSel;
+      b.setAttribute('aria-selected', on);
+      b.tabIndex = on ? 0 : -1;
+      if (on) b.focus({preventScroll:true});
+    });
+    panels.forEach(p => p.hidden = ('#'+p.id) !== targetSel);
+    history.replaceState(null, '', targetSel.replace('#panel-','#')); // #external / #internal
+  }
+
+  btns.forEach(b => b.addEventListener('click', () => activate(b.dataset.target)));
+
+  document.querySelector('.tile-group').addEventListener('keydown', e => {
+    if (!['ArrowLeft','ArrowRight','Home','End'].includes(e.key)) return;
+    e.preventDefault();
+    const i = btns.findIndex(b => b.getAttribute('aria-selected') === 'true');
+    let n = i;
+    if (e.key === 'ArrowRight') n = (i + 1) % btns.length;
+    if (e.key === 'ArrowLeft')  n = (i - 1 + btns.length) % btns.length;
+    if (e.key === 'Home')       n = 0;
+    if (e.key === 'End')        n = btns.length - 1;
+    activate(btns[n].dataset.target);
+  });
+
+  // 初始根据 hash 定位
+  const initial = (location.hash === '#internal') ? '#panel-internal' : '#panel-external';
+  // 绑定 data-target（写在 JS 里，避免 HTML 冗语）
+  btns[0].dataset.target = '#panel-external';
+  btns[1].dataset.target = '#panel-internal';
+  activate(initial);
+</script>
+</body>
+</html>
