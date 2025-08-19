@@ -8,21 +8,11 @@
     }
     .dg.main {
       position: absolute;
-      top: 45px;
+      top: 80px;
       right: 0;
     }
     .dg.main .close-button {
       position: relative;
       line-height: 19px;
     }
-    #switch-to-external { display:none; }
-    .switcher{ position:fixed; top:12px; right:12px; z-index:9999; display:grid; grid-template-columns:44px 44px }
-    .switcher .tile{ all:unset; cursor:pointer; width:44px; height:44px; display:grid; place-items:center; position:relative; background: repeating-linear-gradient(0deg,#1c1e23 0 2px,#15171b 2px 4px), repeating-linear-gradient(90deg,#14161a 0 8px,#121418 8px 16px); box-shadow: inset 0 0 0 1px rgba(255,255,255,.2), inset 0 0 0 2px rgba(255,255,255,.06); }
-    .switcher .tile.right{ box-shadow: inset 1px 0 0 #00000090, inset 2px 0 0 #ffffff10, inset 0 0 0 1px rgba(255,255,255,.2), inset 0 0 0 2px rgba(255,255,255,.06) }
-    .switcher .tile:active{ transform: translateY(1px) }
-    .switcher .tile[aria-selected="false"]{ filter: brightness(.78) contrast(1.05) }
-    .switcher .tile[aria-selected="true"]{ box-shadow: inset 0 0 0 1px #e7e9ec, inset 0 0 0 2px rgba(255,255,255,.2), 0 0 0 1px #ffffff20 }
-    .switcher svg{ width:22px; height:22px; display:block }
-    .switcher .stroke{ stroke:#c7bda3; stroke-width:1.8; fill:none; stroke-linecap:round; stroke-linejoin:round }
-    .switcher .dot{ fill:#c7bda3 }
-    .sr-only{ position:absolute; width:1px; height:1px; margin:-1px; overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border:0 }</style><script defer="defer" src="internal.bundle.3826274a293986074be5.js"></script></head><body><nav class="switcher" role="tablist" aria-label="页面切换"><a class="tile left" id="tab-external" role="tab" aria-selected="false" href="/external.html" title="外部"><span class="sr-only">外部</span> <svg viewBox="0 0 24 24" aria-hidden="true"><path class="stroke" d="M4 11.5 12 5l8 6.5V19a2 2 0 0 1-2 2h-5v-6a1 1 0  0 0-2 0v6H6a2 2 0 0 1-2-2v-7.5z"/></svg> </a><a class="tile right" id="tab-internal" role="tab" aria-selected="true" href="/internal.html" title="内部原理"><span class="sr-only">内部原理</span> <svg viewBox="0 0 24 24" aria-hidden="true"><path class="stroke" d="M4 11.5 12 5l8 6.5V19a2 2 0 0 1-2 2h-5v-6a1 1 0 0 0-2 0v6H6a2 2 0 0 1-2-2v-7.5z"/><path class="stroke" d="M12 9v4"/><circle class="dot" cx="12" cy="16" r="1.1"/></svg></a></nav><div id="info">鼠标拖动旋转，滚轮缩放观察模型</div></body></html>
+    #switch-to-external { display:none; }</style><link rel="stylesheet" href="/public/switcher.css"/><script defer="defer" src="internal.bundle.3826274a293986074be5.js"></script></head><body><script src="/public/switcher.js"></script><script>window.renderSwitcher('internal');</script><div id="info">鼠标拖动旋转，滚轮缩放观察模型</div></body></html>
