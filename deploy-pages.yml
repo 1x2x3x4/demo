@@ -1,0 +1,64 @@
+name: Deploy static site to Pages
+
+on:
+  push:
+    branches: master         # 按需改成你的主分支
+  workflow_dispatch:
+
+# 让 GITHUB_TOKEN 拥有部署 Pages 所需权限
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# 同一时间只运行一个部署，新的会取消旧的
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'         # 打开 npm 依赖缓存
+      # （可选）为 Pages 做一些默认配置/元数据收集
+      - name: Configure GitHub Pages
+        uses: actions/configure-pages@v5
+
+      - name: Install deps
+        run: npm ci
+
+      - name: Expose repo name (for base path)
+        run: echo "REPO_NAME=${GITHUB_REPOSITORY##*/}" >> $GITHUB_ENV
+
+      - name: Build
+        run: npm run build
+        env:
+          REPO_NAME: ${{ env.REPO_NAME }}
+          NODE_ENV: production
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v4
+        with:
+          path: ./docs          # 这里改成你的打包输出目录
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
