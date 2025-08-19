@@ -17,7 +17,7 @@ window.renderSwitcher = function renderSwitcher(current, options = {}){
   external.className = 'tile left';
   external.id = 'tab-external';
   external.setAttribute('role', 'tab');
-  external.setAttribute('href', '/external.html');
+  external.setAttribute('href', 'index.html');
   external.setAttribute('title', '外部（面板/示波器）');
   external.setAttribute('aria-selected', String(current === 'external'));
   external.innerHTML = '<span class="sr-only">外部</span>'+
@@ -32,7 +32,7 @@ window.renderSwitcher = function renderSwitcher(current, options = {}){
   internal.className = 'tile right';
   internal.id = 'tab-internal';
   internal.setAttribute('role', 'tab');
-  internal.setAttribute('href', '/internal.html');
+  internal.setAttribute('href', 'internal.html');
   internal.setAttribute('title', '内部原理（波形/电路）');
   internal.setAttribute('aria-selected', String(current === 'internal'));
   internal.innerHTML = '<span class="sr-only">内部原理</span>'+

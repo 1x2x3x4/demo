@@ -23,12 +23,12 @@
     }
     #switch-to-external { display:none; }
   </style>
-  <link rel="stylesheet" href="/public/switcher.css" />
+  <link rel="stylesheet" href="<%= BASE_PATH %>public/switcher.css" />
   <!-- Webpack 会在此页自动注入内部原理所需的 bundle 脚本 -->
   <!-- 注意：此页专属于“内部原理”三维演示，互不干扰 -->
 </head>
 <body>
-  <script src="/public/switcher.js"></script>
+  <script src="<%= BASE_PATH %>public/switcher.js"></script>
   <script>window.renderSwitcher('internal');</script>
   <div id="info">鼠标拖动旋转，滚轮缩放观察模型</div>
   

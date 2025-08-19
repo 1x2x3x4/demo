@@ -2,53 +2,53 @@
 const path = require('path');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
 
+// 在 GitHub Actions 中会自动存在 GITHUB_ACTIONS=true
+const isCI = process.env.GITHUB_ACTIONS === 'true';
+const BASE_PATH = isCI ? '/demo/' : '/';     // 线上挂 /demo/，本地用根路径
+
 module.exports = {
-  mode: 'development',           // 或 'production'
-  // 关闭持久化缓存，避免模板变更未及时反映到输出 HTML
+  mode: 'development',          // 或 'production'
   cache: false,
   entry: {
     internal: './src/main.js',
   },
   output: {
     filename: '[name].bundle.[contenthash].js',
-    path: path.resolve(__dirname, 'docs'),
-    clean: true,                 // 每次构建前清理 docs
+    path: path.resolve(__dirname, 'dist'),   // 构建输出目录
+    publicPath: BASE_PATH,                   // ☆ 关键：资源前缀（本地'/'，线上'/demo/'）
+    clean: true,
   },
   devtool: 'source-map',
   devServer: {
-    // 同时提供 docs（构建产物）与项目根目录（CDN、scripts、TourGuide 等原生文件）
+    // dev-server 会把构建产物放在内存中从“服务器根”提供；static 只用于磁盘上的额外静态文件
     static: [
-      { directory: path.resolve(__dirname, 'docs') },
-      { directory: path.resolve(__dirname, '.') },
+      { directory: path.resolve(__dirname, 'dist') }, // 访问 dist 中的静态文件（如 CNAME）
+      { directory: path.resolve(__dirname, '.') },    // 根目录下的 /CDN /public /TourGuide 等
     ],
     hot: true,
-    open: ['external.html'],    // 默认打开外部页
+    open: ['demo/index.html'],   // 本地直接打开 /demo/index.html（由 HWP 虚拟输出）
     port: 8081,
+    // 如需让本地也“完全模拟”线上（资源也从 /demo/ 前缀提供），取消下面注释两行：
+    // devMiddleware: { publicPath: '/demo/' },        // 与 output.publicPath 对齐
+    // static: [{ directory: path.resolve(__dirname, '.'), publicPath: '/demo/' }],
   },
   plugins: [
-    // 内部原理页（走 Webpack bundle）
+    // /demo/internal.html 走 Webpack bundle（会自动按 publicPath 注入 <script>）
     new HtmlWebpackPlugin({
       template: './public/internal.html',
-      filename: 'internal.html',
+      filename: 'demo/internal.html',
       chunks: ['internal'],
+      templateParameters: { BASE_PATH },   // 提供给模板使用
     }),
-    // 外部操作页（纯静态模板，不注入 bundle）
+    // /demo/index.html 作为“外部页/首页”，不注入 bundle
     new HtmlWebpackPlugin({
       template: './public/external.html',
-      filename: 'external.html',
+      filename: 'demo/index.html',      // 作为 /demo/ 的首页，把./public/external.html 映射到 /demo/index.html
       inject: false,
+      templateParameters: { BASE_PATH },   // 提供给模板使用
     }),
   ],
-  module: {
-    rules: [
-      // 如果后续想用 glsl / 图片等资源，可在这里追加 loader
-    ],
-  },
-  resolve: {
-    extensions: ['.js'],
-  },
-  // 关闭性能提示
-  performance: {
-    hints: false,
-  },
+  module: { rules: [] },
+  resolve: { extensions: ['.js'] },
+  performance: { hints: false },
 };

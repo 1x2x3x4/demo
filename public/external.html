@@ -4,14 +4,14 @@
   <meta charset="UTF-8">
   <title>示波器仿真系统</title>
   <!-- 以站点根为基准，便于 devServer 直接提供这些静态文件 -->
-  <script src="/CDN/vue.min.js"></script>
-  <link rel="stylesheet" href="/public/styles.css">
-  <script defer src="/TourGuide/index.js"></script>
-  <link rel="stylesheet" href="/public/switcher.css" />
+  <script src="<%= BASE_PATH %>CDN/vue.min.js"></script>
+  <link rel="stylesheet" href="<%= BASE_PATH %>public/styles.css">
+  <script defer src="<%= BASE_PATH %>TourGuide/index.js"></script>
+  <link rel="stylesheet" href="<%= BASE_PATH %>public/switcher.css" />
 </head>
 <body>
   <!-- 右上角页面切换（外部 / 内部原理） -->
-  <script src="/public/switcher.js"></script>
+  <script src="<%= BASE_PATH %>public/switcher.js"></script>
   <script>window.renderSwitcher('external');</script>
   <!-- 整体应用容器 -->
   <div id="app">
@@ -428,14 +428,14 @@
   </div>
 
   <!-- 引入模块化JS文件（从项目根目录提供） -->
-  <script src="/scripts/constants.js"></script>
-  <script src="/scripts/OscilloscopeState.js"></script>
-  <script src="/scripts/WaveformUtilities.js"></script>
-  <script src="/scripts/GLWaveformRenderer.js"></script>
-  <script src="/scripts/WaveformRenderer.js"></script>
-  <script src="/scripts/waveDrawer.js"></script>
-  <script src="/scripts/lissajousDrawer.js"></script>
-  <script src="/scripts/calibrationLogic.js"></script>
-  <script src="/app.js"></script>
+  <script src="<%= BASE_PATH %>scripts/constants.js"></script>
+  <script src="<%= BASE_PATH %>scripts/OscilloscopeState.js"></script>
+  <script src="<%= BASE_PATH %>scripts/WaveformUtilities.js"></script>
+  <script src="<%= BASE_PATH %>scripts/GLWaveformRenderer.js"></script>
+  <script src="<%= BASE_PATH %>scripts/WaveformRenderer.js"></script>
+  <script src="<%= BASE_PATH %>scripts/waveDrawer.js"></script>
+  <script src="<%= BASE_PATH %>scripts/lissajousDrawer.js"></script>
+  <script src="<%= BASE_PATH %>scripts/calibrationLogic.js"></script>
+  <script src="<%= BASE_PATH %>app.js"></script>
 </body>
 </html>
