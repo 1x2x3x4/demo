@@ -1,4 +1,7 @@
-window.LissajousDrawer = (function() {
+import { OscilloscopeConstants as CONSTANTS } from './constants.js';
+import { drawGrid, calculateVoltage } from './WaveformUtilities.js';
+
+export const LissajousDrawer = (function() {
   // 高精度最大公约数计算（转换为整数处理，保证精度）
   function gcdPrecise(a, b) {
     const precision = 1000;
@@ -30,7 +33,6 @@ window.LissajousDrawer = (function() {
       } = params;
 
       // 使用共享常量
-      const { CONSTANTS, CHANNEL_COLORS } = WaveformUtilities;
       const canvasWidth = CONSTANTS.CANVAS.WIDTH;
       const canvasHeight = CONSTANTS.CANVAS.HEIGHT;
       const gridSize = CONSTANTS.GRID.SIZE;
@@ -61,7 +63,7 @@ window.LissajousDrawer = (function() {
       
       // 清除画布并绘制网格
       ctx.clearRect(0, 0, canvasWidth, canvasHeight);
-      WaveformUtilities.drawGrid(ctx);
+      drawGrid(ctx);
       
       // 验证参数
       if (freqX <= 0 || freqY <= 0) {
@@ -401,3 +403,5 @@ window.LissajousDrawer = (function() {
     adjustLissajousParam
   };
 })();
+
+export default LissajousDrawer;

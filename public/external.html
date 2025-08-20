@@ -427,15 +427,6 @@
     </main>
   </div>
 
-  <!-- 引入模块化JS文件（从项目根目录提供） -->
-  <script src="<%= BASE_PATH %>scripts/constants.js"></script>
-  <script src="<%= BASE_PATH %>scripts/OscilloscopeState.js"></script>
-  <script src="<%= BASE_PATH %>scripts/WaveformUtilities.js"></script>
-  <script src="<%= BASE_PATH %>scripts/GLWaveformRenderer.js"></script>
-  <script src="<%= BASE_PATH %>scripts/WaveformRenderer.js"></script>
-  <script src="<%= BASE_PATH %>scripts/waveDrawer.js"></script>
-  <script src="<%= BASE_PATH %>scripts/lissajousDrawer.js"></script>
-  <script src="<%= BASE_PATH %>scripts/calibrationLogic.js"></script>
-  <script src="<%= BASE_PATH %>app.js"></script>
+  <!-- 由 HtmlWebpackPlugin 自动注入 external 入口的 bundle -->
 </body>
 </html>

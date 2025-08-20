@@ -1,8 +1,8 @@
 /**
- * OscilloscopeState.js
+ * OscilloscopeState.js (ESM)
  * 示波器状态管理模块 - 统一管理共享状态
  */
-window.OscilloscopeState = (function() {
+export const OscilloscopeState = (function() {
   // 私有状态存储
   const state = {
     // 显示调整因子
@@ -150,4 +150,6 @@ window.OscilloscopeState = (function() {
       }
     }
   };
-})(); 
+})();
+
+export default OscilloscopeState;

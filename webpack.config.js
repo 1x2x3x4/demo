@@ -1,6 +1,7 @@
 // CommonJS 写法，Node ≥14 可直接运行
 const path = require('path');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
+const CopyWebpackPlugin = require('copy-webpack-plugin');
 
 // 在 GitHub Actions 中会自动存在 GITHUB_ACTIONS=true
 const isCI = process.env.GITHUB_ACTIONS === 'true';
@@ -11,6 +12,7 @@ module.exports = {
   cache: false,
   entry: {
     internal: './src/main.js',
+    external: './src/external.js',
   },
   output: {
     filename: '[name].bundle.[contenthash].js',
@@ -40,12 +42,31 @@ module.exports = {
       chunks: ['internal'],
       templateParameters: { BASE_PATH },   // 提供给模板使用
     }),
-    // /demo/index.html 作为“外部页/首页”，不注入 bundle
+    // /demo/index.html 作为“外部页/首页”，注入 external 入口的 bundle
     new HtmlWebpackPlugin({
       template: './public/external.html',
       filename: 'demo/index.html',      // 作为 /demo/ 的首页，把./public/external.html 映射到 /demo/index.html
-      inject: false,
+      chunks: ['external'],
+      inject: 'body',
       templateParameters: { BASE_PATH },   // 提供给模板使用
+    }),
+    // 将 src/widgets/switcher.js 复制为输出目录下的 public/switcher.js，供两端页面公用
+    new CopyWebpackPlugin({
+      patterns: [
+        // JS：复制到两份，兼容 dev('/') 与 prod('/demo/')
+        { from: path.resolve(__dirname, 'src/widgets/switcher.js'), to: 'public/switcher.js' },
+        { from: path.resolve(__dirname, 'src/widgets/switcher.js'), to: 'demo/public/switcher.js' },
+        // CSS：从 src/widgets 源复制到两份
+        { from: path.resolve(__dirname, 'src/widgets/switcher.css'), to: 'public/switcher.css' },
+        { from: path.resolve(__dirname, 'src/widgets/switcher.css'), to: 'demo/public/switcher.css' },
+        // 其他静态资源：样式与第三方库
+        { from: path.resolve(__dirname, 'public/styles.css'), to: 'public/styles.css' },
+        { from: path.resolve(__dirname, 'public/styles.css'), to: 'demo/public/styles.css' },
+        { from: path.resolve(__dirname, 'CDN'), to: 'CDN' },
+        { from: path.resolve(__dirname, 'CDN'), to: 'demo/CDN' },
+        { from: path.resolve(__dirname, 'TourGuide'), to: 'TourGuide' },
+        { from: path.resolve(__dirname, 'TourGuide'), to: 'demo/TourGuide' },
+      ],
     }),
   ],
   module: { rules: [] },

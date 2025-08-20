@@ -1,3 +1,9 @@
+import { OscilloscopeConstants } from './scripts/constants.js';
+import * as WaveformUtilities from './scripts/WaveformUtilities.js';
+import { WaveDrawer } from './scripts/waveDrawer.js';
+import LissajousDrawer from './scripts/lissajousDrawer.js';
+import CalibrationLogic from './scripts/calibrationLogic.js';
+import { StepAdjustmentUtils } from './scripts/StepAdjustmentUtils.js';
 /**
  * 创建并配置波形渲染器
  * @param {HTMLCanvasElement} canvas - 目标Canvas元素
@@ -90,7 +96,7 @@ function updateWaveform(renderer, waveType) {
   renderer.update(newData);
 }
 
-new Vue({
+export default new Vue({
   el: '#app',
   data: {
     // 当前模式，'wave'表示波形模式
@@ -265,19 +271,19 @@ new Vue({
     sliderRanges() {
       return {
         time: {
-          min: Math.max(0.2, this.timeDiv - this.timeDiv / 5),
-          max: this.timeDiv + this.timeDiv / 5,
-          step: this.timeDiv / 100
+          min: StepAdjustmentUtils.adjustTimeDiv(this.timeDiv, -1),
+          max: StepAdjustmentUtils.adjustTimeDiv(this.timeDiv, 1),
+          step: 0.01 // 滑块步长保持精细调节
         },
         volts1: {
-          min: Math.max(0.02, this.voltsDiv[1] - this.voltsDiv[1] / 5),
-          max: this.voltsDiv[1] + this.voltsDiv[1] / 5,
-          step: this.voltsDiv[1] / 100
+          min: StepAdjustmentUtils.adjustVoltsDiv(this.voltsDiv[1], -1),
+          max: StepAdjustmentUtils.adjustVoltsDiv(this.voltsDiv[1], 1),
+          step: 0.01 // 滑块步长保持精细调节
         },
         volts2: {
-          min: Math.max(0.02, this.voltsDiv[2] - this.voltsDiv[2] / 5),
-          max: this.voltsDiv[2] + this.voltsDiv[2] / 5,
-          step: this.voltsDiv[2] / 100
+          min: StepAdjustmentUtils.adjustVoltsDiv(this.voltsDiv[2], -1),
+          max: StepAdjustmentUtils.adjustVoltsDiv(this.voltsDiv[2], 1),
+          step: 0.01 // 滑块步长保持精细调节
         }
       }
     },
@@ -656,12 +662,14 @@ new Vue({
         }
 
         if (type === 'time') {
-          this.timeDiv = WaveformUtilities.clamp(parsedValue, 1, 100);
-          this.timeDiv = Number(this.timeDiv.toFixed(1));
+          // 使用1:2:5步长比例获取最接近的有效值
+          const closestValue = StepAdjustmentUtils.getClosestTimeDiv(parsedValue);
+          this.timeDiv = WaveformUtilities.clamp(closestValue, 0.1, 100);
           this.sliderValues.time = 0;
         } else if (type === 'volts') {
-          this.voltsDiv[line] = WaveformUtilities.clamp(parsedValue, 0.1, 10);
-          this.voltsDiv[line] = Number(this.voltsDiv[line].toFixed(2));
+          // 使用1:2:5步长比例获取最接近的有效值
+          const closestValue = StepAdjustmentUtils.getClosestVoltsDiv(parsedValue);
+          this.voltsDiv[line] = WaveformUtilities.clamp(closestValue, 0.01, 10);
           this.sliderValues.volts[line] = 0;
         }
         this.needsRedraw = true;
@@ -756,12 +764,24 @@ new Vue({
     },
     adjustParam(param, step, line) {
       try {
+        const direction = step > 0 ? 1 : -1;
+        
         if (['freqX', 'freqY', 'phaseDiff'].includes(param)) {
-          // 使用LissajousDrawer模块化函数调整李萨如参数
-          Object.assign(this, LissajousDrawer.adjustLissajousParam(this, param, step));
+          // 使用1:2:5步长比例调整李萨如参数
+          if (param === 'freqX') {
+            this.freqX = StepAdjustmentUtils.adjustFrequency(this.freqX, direction);
+          } else if (param === 'freqY') {
+            this.freqY = StepAdjustmentUtils.adjustFrequency(this.freqY, direction);
+          } else if (param === 'phaseDiff') {
+            this.phaseDiff = StepAdjustmentUtils.adjustPhase(this.phaseDiff, direction);
+          }
         } else {
-          // 使用WaveDrawer模块化函数调整示波器参数
-          Object.assign(this, WaveDrawer.adjustScopeSettings(this, param, step, line));
+          // 使用1:2:5步长比例调整示波器参数
+          if (param === 'timeDiv') {
+            this.timeDiv = StepAdjustmentUtils.adjustTimeDiv(this.timeDiv, direction);
+          } else if (param === 'voltsDiv' && line) {
+            this.voltsDiv[line] = StepAdjustmentUtils.adjustVoltsDiv(this.voltsDiv[line], direction);
+          }
         }
         this.refreshDisplay();
       } catch (error) {
@@ -770,8 +790,15 @@ new Vue({
     },
     validateInput(type, line) {
       try {
-        // 使用WaveDrawer模块化函数验证输入
-        Object.assign(this, WaveDrawer.validateInputSettings(this, type, line));
+        if (type === 'time') {
+          // 使用1:2:5步长比例验证时间分度
+          const closestValue = StepAdjustmentUtils.getClosestTimeDiv(this.timeDiv);
+          this.timeDiv = WaveformUtilities.clamp(closestValue, 0.1, 100);
+        } else if (type === 'volts' && line) {
+          // 使用1:2:5步长比例验证电压分度
+          const closestValue = StepAdjustmentUtils.getClosestVoltsDiv(this.voltsDiv[line]);
+          this.voltsDiv[line] = WaveformUtilities.clamp(closestValue, 0.01, 10);
+        }
         this.refreshDisplay();
       } catch (error) {
         console.error('Input validation failed:', error);
@@ -805,12 +832,16 @@ new Vue({
     // 调整位置参数（水平位置和垂直位置）
     adjustPosition(type, step, line) {
       try {
+        const direction = step > 0 ? 1 : -1;
+        
         if (type === 'horizontal') {
-          // 水平位置的范围限制在-8到8格之间（一个屏幕宽度为16格）
-          this.horizontalPosition = Math.min(8, Math.max(-8, this.horizontalPosition + step));
+          // 使用1:2:5步长比例调整水平位置
+          const nextPos = StepAdjustmentUtils.adjustPosition(this.horizontalPosition, direction);
+          this.horizontalPosition = Math.min(8, Math.max(-8, nextPos));
         } else if (type === 'vertical' && line) {
-          // 垂直位置的范围限制在-4到4格之间（一个屏幕高度为8格）
-          this.verticalPosition[line] = Math.min(4, Math.max(-4, this.verticalPosition[line] + step));
+          // 使用1:2:5步长比例调整垂直位置
+          const nextPos = StepAdjustmentUtils.adjustPosition(this.verticalPosition[line], direction);
+          this.verticalPosition[line] = Math.min(4, Math.max(-4, nextPos));
         }
         this.needsRedraw = true;
         this.refreshDisplay();

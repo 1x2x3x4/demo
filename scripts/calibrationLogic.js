@@ -1,4 +1,4 @@
-window.CalibrationLogic = (function() {
+export const CalibrationLogic = (function() {
   // 检查校准状态
   function checkCalibrationStatus(calibrationFactor) {
     if (Math.abs(calibrationFactor - 1.0) < 0.02) {
@@ -71,13 +71,9 @@ window.CalibrationLogic = (function() {
       result.currentMode = 'wave';
     } else if (step === 'lissajous') {
       // 使用Lissajous逻辑切换到李萨如图模式
-      if (window.LissajousDrawer && window.LissajousDrawer.switchToLissajousMode) {
-        Object.assign(result, window.LissajousDrawer.switchToLissajousMode(state));
-      } else {
-        // 基本的模式切换
-        result.currentMode = 'lissajous';
-        result.displayMode = 'vertical';
-      }
+      // 基本的模式切换（去除全局依赖，保持最小逻辑）
+      result.currentMode = 'lissajous';
+      result.displayMode = 'vertical';
     } else if (step === 'calibration') {
       // 进入自检校准页面时，重置为独立显示模式和波形模式
       result.displayMode = 'independent';
@@ -188,3 +184,5 @@ window.CalibrationLogic = (function() {
     initializeCalibration
   };
 })();
+
+export default CalibrationLogic;

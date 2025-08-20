@@ -16,7 +16,7 @@ header {
 
 main {
   display: flex;
-  height: calc(100vh - 168px);
+  height: calc(100vh - 180px);
   position: relative; /* 为主内容添加相对定位 */
   width: 100%; /* 确保宽度一致 */
 }
@@ -346,12 +346,13 @@ input[type="number"] {
   justify-content: center;
   box-sizing: border-box;
   min-width: 0; /* 允许压缩到更小宽度 */
+  aspect-ratio: 2 / 1;
 }
 
 canvas {
   width: 100%;
   height: 100%;
-  background: #3980AB;
+  display: block;
 }
 
 /* 触发控制样式 */

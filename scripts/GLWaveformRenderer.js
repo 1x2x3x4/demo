@@ -2,7 +2,7 @@
  * GLWaveformRenderer.js
  * WebGL波形渲染器 - 提供高性能波形绘制
  */
-class GLWaveformRenderer {
+export default class GLWaveformRenderer {
   constructor(canvas) {
     this.canvas = canvas;
     this.gl = canvas.getContext('webgl2');
@@ -157,9 +157,4 @@ class GLWaveformRenderer {
   }
 }
 
-// 导出模块
-if (typeof module !== 'undefined' && typeof module.exports !== 'undefined') {
-  module.exports = GLWaveformRenderer;
-} else {
-  window.GLWaveformRenderer = GLWaveformRenderer;
-} 
+// ESM 导出默认类
